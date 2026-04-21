@@ -12,13 +12,20 @@ def register():
     data = request.get_json() or {}
     username = data.get("username")
     password = data.get("password")
+    full_name = data.get("full_name", "")
     role = data.get("role", "Receptionist")
     if not username or not password:
         return jsonify({"msg": "username and password required"}), 400
     if db.users.find_one({"username": username}):
         return jsonify({"msg": "user exists"}), 400
     hashed = generate_password_hash(password)
-    user = {"username": username, "password": hashed, "role": role, "created_at": datetime.datetime.utcnow()}
+    user = {
+        "username": username,
+        "password": hashed,
+        "full_name": full_name,
+        "role": role,
+        "created_at": datetime.datetime.utcnow()
+    }
     db.users.insert_one(user)
     return jsonify({"msg": "user created"}), 201
 

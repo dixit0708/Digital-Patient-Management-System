@@ -1,11 +1,7 @@
 import React, { useState } from 'react'
-import { Box, Tabs, Tab, Paper, Typography, Button, Grid } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
+import { Box, Tabs, Tab, Paper, Typography, Grid, Divider } from '@mui/material'
+import PersonAddIcon from '@mui/icons-material/PersonAdd'
 import PeopleIcon from '@mui/icons-material/People'
-import EventIcon from '@mui/icons-material/Event'
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
-import AppointmentList from '../components/AppointmentList'
-import CalendarView from '../components/CalendarView'
 import PatientForm from '../components/PatientForm'
 import PatientList from '../components/PatientList'
 import AppointmentForm from '../components/AppointmentForm'
@@ -24,121 +20,83 @@ export default function Dashboard() {
 
   return (
     <Box>
-      {/* Header with Title */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+      {/* Page Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b' }}>
           Dashboard
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#64748b', mt: 0.5 }}>
+          Dr Chauhan Clinic & Therapy Center — Patient Management
         </Typography>
       </Box>
 
       {/* Tab Navigation */}
       <Paper sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={(e, newValue) => setTabValue(newValue)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
             '& .MuiTab-root': {
               minWidth: 'auto',
-              px: 2,
-              textTransform: 'capitalize',
+              px: 3,
+              textTransform: 'none',
               fontWeight: 500,
+              fontSize: '0.95rem',
+            },
+            '& .Mui-selected': {
+              fontWeight: 700,
+              color: '#6366F1 !important',
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: '#6366F1',
+              height: 3,
+              borderRadius: '3px 3px 0 0',
             },
           }}
         >
-          <Tab 
-            icon={<AddIcon sx={{ mr: 1 }} />} 
+          <Tab
+            icon={<PersonAddIcon sx={{ mr: 1 }} />}
             iconPosition="start"
-            label="Create Patient" 
+            label="New Patient & Appointment"
           />
-          <Tab 
-            icon={<PeopleIcon sx={{ mr: 1 }} />} 
+          <Tab
+            icon={<PeopleIcon sx={{ mr: 1 }} />}
             iconPosition="start"
-            label="All Patients" 
-          />
-          <Tab 
-            icon={<EventIcon sx={{ mr: 1 }} />} 
-            iconPosition="start"
-            label="Create Appointment" 
-          />
-          <Tab 
-            icon={<CalendarMonthIcon sx={{ mr: 1 }} />} 
-            iconPosition="start"
-            label="Calendar & List" 
+            label="All Patients"
           />
         </Tabs>
       </Paper>
 
-
-
-      {/* Tab 0: Create Patient */}
+      {/* Tab 0: Unified — New Patient + New Appointment */}
       <TabPanel value={tabValue} index={0}>
         <Box>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>➕ Register New Patient</Typography>
+          {/* Patient Registration */}
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1e293b' }}>
+            ➕ Register New Patient
+          </Typography>
           <PatientForm />
+
+          <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+
+          {/* Appointment Booking */}
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1e293b' }}>
+            📅 Schedule Appointment
+          </Typography>
+          <AppointmentForm />
         </Box>
       </TabPanel>
 
       {/* Tab 1: All Patients */}
       <TabPanel value={tabValue} index={1}>
         <Box>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>👥 Patient Directory</Typography>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#1e293b' }}>
+            👥 Patient Directory
+          </Typography>
           <PatientList />
         </Box>
       </TabPanel>
-
-      {/* Tab 2: Create Appointment */}
-      <TabPanel value={tabValue} index={2}>
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>📅 Schedule Appointment</Typography>
-          <AppointmentForm />
-        </Box>
-      </TabPanel>
-
-      {/* Tab 3: Calendar & Appointment List */}
-      <TabPanel value={tabValue} index={3}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>📆 Calendar View</Typography>
-            <CalendarView />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>📋 Upcoming Appointments</Typography>
-            <AppointmentList />
-          </Grid>
-        </Grid>
-      </TabPanel>
-
-      {/* Quick Action Buttons (Optional - Floating at bottom) */}
-      <Box sx={{ 
-        position: 'fixed', 
-        bottom: 24, 
-        right: 24, 
-        display: 'flex', 
-        gap: 1,
-        flexWrap: 'wrap',
-        justifyContent: 'flex-end'
-      }}>
-        <Button 
-          variant="contained" 
-          color="primary"
-          onClick={() => setTabValue(0)}
-          startIcon={<AddIcon />}
-          sx={{ borderRadius: 3 }}
-        >
-          New Patient
-        </Button>
-        <Button 
-          variant="contained" 
-          color="secondary"
-          onClick={() => setTabValue(2)}
-          startIcon={<EventIcon />}
-          sx={{ borderRadius: 3 }}
-        >
-          New Appointment
-        </Button>
-      </Box>
     </Box>
   )
 }

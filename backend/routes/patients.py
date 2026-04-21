@@ -116,7 +116,11 @@ def create_patient():
         # Check if patient already exists
         existing = db.patients.find_one({"patient_id": patient_id})
         if existing:
-            return jsonify({"msg": "patient with this name and phone already exists"}), 409
+            return jsonify({
+                "msg": "patient with this name and phone already exists",
+                "duplicate": True,
+                "patient_id": patient_id
+            }), 409
         
         # Date of visit
         date_of_visit = data.get("date_of_visit") or datetime.datetime.utcnow().isoformat()
