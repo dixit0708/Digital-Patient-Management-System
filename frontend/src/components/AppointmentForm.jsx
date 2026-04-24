@@ -24,6 +24,24 @@ export default function AppointmentForm({ onCreated }) {
 
   const navigate = useNavigate()
 
+  const handleDateChange = (val) => {
+    if (!val) return val;
+    const d = new Date(val);
+    const m = d.getMinutes();
+    if (m !== 0 && m !== 30) {
+      const snapped = m < 15 ? 0 : (m < 45 ? 30 : 0);
+      d.setMinutes(snapped);
+      if (snapped === 0 && m >= 45) d.setHours(d.getHours() + 1);
+      const yyyy = d.getFullYear();
+      const MM = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const HH = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${MM}-${dd}T${HH}:${min}`;
+    }
+    return val;
+  }
+
   useEffect(() => {
     const fetchPatients = async () => {
       try {
@@ -132,9 +150,10 @@ export default function AppointmentForm({ onCreated }) {
               label="Date & Time"
               type="datetime-local"
               value={dateTime}
-              onChange={(e) => setDateTime(e.target.value)}
+              onChange={(e) => setDateTime(handleDateChange(e.target.value))}
               sx={{ width: 240 }}
               InputLabelProps={{ shrink: true }}
+              inputProps={{ step: 1800 }}
             />
 
             <TextField

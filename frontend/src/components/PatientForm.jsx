@@ -20,7 +20,12 @@ const genders = [
 const ADVICE_OPTIONS = [
   'use RO water for head wash',
   'eat Diet',
-  'head stand'
+  'head stand',
+  'avoid junk food',
+  'ensure good sleep',
+  'use sulfate-free shampoo',
+  'manage stress',
+  'increase protein intake'
 ]
 
 const HISTORY_OPTIONS = [
@@ -29,7 +34,11 @@ const HISTORY_OPTIONS = [
   'Thyroid Disorder',
   'Telogen Effluvium',
   'Nutritional Deficiencies (Iron/Biotin/Zinc)',
-  'Family History of Hair Loss'
+  'Family History of Hair Loss',
+  'Androgenetic Alopecia',
+  'Traction Alopecia',
+  'Dandruff / Seborrheic Dermatitis',
+  'Scalp Psoriasis'
 ]
 
 const treatments = [
@@ -60,6 +69,8 @@ export default function PatientForm() {
   const [photos, setPhotos] = useState([])
   const [selectedMedicines, setSelectedMedicines] = useState([])
   const [loading, setLoading] = useState(false)
+  const [otherTreatmentDialogOpen, setOtherTreatmentDialogOpen] = useState(false)
+  const [otherTreatment, setOtherTreatment] = useState('')
 
   // Success dialog state
   const [successDialog, setSuccessDialog] = useState({ open: false, patientId: null, name: '' })
@@ -186,10 +197,19 @@ export default function PatientForm() {
           <Typography variant="h6" mt={2} mb={1}>Visit Details</Typography>
           <Grid container spacing={2} mb={2}>
             <Grid item xs={12} sm={6}>
-              <TextField select label="Treatment Type *" value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} fullWidth required>
+              <TextField select label="Treatment Type *" value={treatments.includes(form.treatment) ? form.treatment : (form.treatment ? 'Other' : '')} onChange={(e) => {
+                if (e.target.value === 'Other') {
+                  setOtherTreatmentDialogOpen(true)
+                } else {
+                  setForm({ ...form, treatment: e.target.value })
+                }
+              }} fullWidth required>
                 <MenuItem value="">Select treatment</MenuItem>
                 {treatments.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </TextField>
+              {form.treatment && !treatments.includes(form.treatment) && (
+                <Typography variant="caption" color="primary">Custom: {form.treatment}</Typography>
+              )}
             </Grid>
             <Grid item xs={12} sm={6}>
             </Grid>
@@ -415,6 +435,20 @@ export default function PatientForm() {
           >
             View Patient Record
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={otherTreatmentDialogOpen} onClose={() => setOtherTreatmentDialogOpen(false)}>
+        <DialogTitle>Specify Custom Treatment</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus margin="dense" label="Treatment Name" fullWidth value={otherTreatment} onChange={(e) => setOtherTreatment(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOtherTreatmentDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setForm({ ...form, treatment: otherTreatment })
+            setOtherTreatmentDialogOpen(false)
+          }} variant="contained">OK</Button>
         </DialogActions>
       </Dialog>
     </>

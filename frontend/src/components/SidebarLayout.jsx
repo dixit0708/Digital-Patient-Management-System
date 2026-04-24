@@ -103,30 +103,26 @@ export default function SidebarLayout({ children }) {
 
           <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.08)' }} />
 
-          {/* Admin Section */}
-          {auth?.user?.role === 'Admin' && (
-            <>
-              <Box sx={{ px: 1.5, pb: 0.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#6366F1', letterSpacing: 1.5, fontSize: '0.65rem' }}>
-                  ADMIN
-                </Typography>
-              </Box>
-              <ListItem disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => setMedicinesOpen(true)}
-                  sx={{
-                    borderRadius: '8px',
-                    '&:hover': { background: 'rgba(99,102,241,0.15)' },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 38 }}>
-                    <MedicationIcon fontSize="small" sx={{ color: '#f87171' }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Medicines" primaryTypographyProps={{ fontSize: '0.9rem', color: '#cbd5e1' }} />
-                </ListItemButton>
-              </ListItem>
-            </>
-          )}
+          {/* Medicines Section (Available to all) */}
+          <Box sx={{ px: 1.5, pb: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: '#6366F1', letterSpacing: 1.5, fontSize: '0.65rem' }}>
+              RESOURCES
+            </Typography>
+          </Box>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => setMedicinesOpen(true)}
+              sx={{
+                borderRadius: '8px',
+                '&:hover': { background: 'rgba(99,102,241,0.15)' },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 38 }}>
+                <MedicationIcon fontSize="small" sx={{ color: '#f87171' }} />
+              </ListItemIcon>
+              <ListItemText primary="Medicines" primaryTypographyProps={{ fontSize: '0.9rem', color: '#cbd5e1' }} />
+            </ListItemButton>
+          </ListItem>
         </List>
 
         {/* Logout at bottom */}
@@ -153,9 +149,7 @@ export default function SidebarLayout({ children }) {
         {children}
       </Box>
 
-      {auth?.user?.role === 'Admin' && (
-        <MedicinesPanel open={medicinesOpen} onClose={() => setMedicinesOpen(false)} />
-      )}
+      <MedicinesPanel open={medicinesOpen} onClose={() => setMedicinesOpen(false)} />
     </Box>
   )
 }

@@ -15,12 +15,18 @@ const TREATMENTS = [
   'GFC',
   'Mesotherapy',
   'Biotin',
+  'Other'
 ]
 
 const ADVICE_OPTIONS = [
   'use RO water for head wash',
   'eat Diet',
-  'head stand'
+  'head stand',
+  'avoid junk food',
+  'ensure good sleep',
+  'use sulfate-free shampoo',
+  'manage stress',
+  'increase protein intake'
 ]
 
 const HISTORY_OPTIONS = [
@@ -29,7 +35,11 @@ const HISTORY_OPTIONS = [
   'Thyroid Disorder',
   'Telogen Effluvium',
   'Nutritional Deficiencies (Iron/Biotin/Zinc)',
-  'Family History of Hair Loss'
+  'Family History of Hair Loss',
+  'Androgenetic Alopecia',
+  'Traction Alopecia',
+  'Dandruff / Seborrheic Dermatitis',
+  'Scalp Psoriasis'
 ]
 
 function TabPanel(props) {
@@ -55,8 +65,28 @@ export default function PatientDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [selectedMedicines, setSelectedMedicines] = useState([])
   const [medicinesPanelOpen, setMedicinesPanelOpen] = useState(false)
+  const [otherTreatmentDialogOpen, setOtherTreatmentDialogOpen] = useState(false)
+  const [otherTreatment, setOtherTreatment] = useState('')
   const auth = useAuth()
   const nav = useNavigate()
+
+  const handleDateChange = (val) => {
+    if (!val) return val;
+    const d = new Date(val);
+    const m = d.getMinutes();
+    if (m !== 0 && m !== 30) {
+      const snapped = m < 15 ? 0 : (m < 45 ? 30 : 0);
+      d.setMinutes(snapped);
+      if (snapped === 0 && m >= 45) d.setHours(d.getHours() + 1);
+      const yyyy = d.getFullYear();
+      const MM = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const HH = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${MM}-${dd}T${HH}:${min}`;
+    }
+    return val;
+  }
 
   const fetch = async () => {
     try {
@@ -108,6 +138,7 @@ export default function PatientDetail() {
       const data = await res.json()
       if (data.secure_url) {
         setNewVisit((v) => ({ ...v, photos: [...v.photos, data.secure_url] }))
+        alert('Photo uploaded successfully')
       } else {
         alert('Upload failed')
       }
@@ -232,9 +263,50 @@ export default function PatientDetail() {
               </Paper>
               <Box mt={2}>
                 <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6">Complete Medical History</Typography>
+                  <Typography variant="h6">Previous Visits History</Typography>
                   <Box mt={1}>
-                    <Typography>{patient?.medical_history || 'Not provided'}</Typography>
+                    {visits.length <= 1 ? (
+                      <Typography variant="body2" sx={{ color: 'gray' }}>No previous visits recorded yet</Typography>
+                    ) : (
+                      visits.slice(0, visits.length - 1).map((v, idx) => (
+                        <Box key={idx} sx={{ mb: 2, pb: 1, borderBottom: idx < visits.length - 2 ? '1px solid #eee' : 'none' }}>
+                          <Typography><strong>{dayjs(v.date_of_visit).format('DD MMM YYYY, h:mm A')}</strong></Typography>
+                          <Typography variant="body2" sx={{ color: 'primary.main' }}>{v.treatment}</Typography>
+                          {v.doctor_notes && <Typography variant="body2"><strong>Notes:</strong> {v.doctor_notes}</Typography>}
+                          {v.doctor_advice && <Typography variant="body2"><strong>Advice:</strong> {v.doctor_advice}</Typography>}
+                          {v.next_visit && <Typography variant="body2" sx={{ color: 'orange' }}><strong>Next Scheduled:</strong> {dayjs(v.next_visit).format('DD MMM YYYY')}</Typography>}
+                          {(v.photos || []).length > 0 && (
+                            <Box mt={1}>
+                              <Typography variant="caption"><strong>Photos:</strong></Typography>
+                              <Box display="flex" gap={1} mt={0.5}>
+                                {v.photos.map((u, i) => (<img key={i} src={u} alt="photo" style={{ height: 80, borderRadius: 4 }} />))}
+                              </Box>
+                            </Box>
+                          )}
+                          {(v.medicines || []).length > 0 && (
+                            <Box mt={2} sx={{ backgroundColor: '#f9f9f9', p: 1.5, borderRadius: 1, border: '2px solid #2196F3' }}>
+                              <Box display="flex" alignItems="center" gap={1} mb={1}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#2196F3' }}>💊 Medicines & Billing</Typography>
+                              </Box>
+                              <Box display="flex" flexDirection="column" gap={0.5}>
+                                {v.medicines.map((m, i) => (
+                                  <Box key={i} display="flex" justifyContent="space-between" alignItems="center">
+                                    <Typography variant="body2">{m.name}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2196F3' }}>₹{m.price.toFixed(2)}</Typography>
+                                  </Box>
+                                ))}
+                              </Box>
+                              <Box display="flex" justifyContent="space-between" sx={{ borderTop: '2px solid #ddd', pt: 1, mt: 1 }}>
+                                <Typography variant="subtitle2"><strong>Total Bill:</strong></Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#4CAF50', fontSize: '1.1em' }}>
+                                  ₹{v.medicines.reduce((sum, m) => sum + m.price, 0).toFixed(2)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      ))
+                    )}
                   </Box>
                 </Paper>
               </Box>
@@ -243,12 +315,12 @@ export default function PatientDetail() {
             <Grid item xs={12} md={6}>
               {/* Visit History Timeline */}
               <Paper sx={{ p: 2, mb: 2 }}>
-                <Typography variant="h6">Visit History</Typography>
+                <Typography variant="h6">Visit History (Latest)</Typography>
                 {visits.length === 0 ? (
                   <Typography variant="body2" sx={{ color: 'gray' }}>No visits recorded yet</Typography>
                 ) : (
-                  visits.map((v, idx) => (
-                    <Box key={idx} sx={{ borderBottom: idx < visits.length - 1 ? '1px solid #eee' : 'none', py: 2 }}>
+                  [visits[visits.length - 1]].map((v, idx) => (
+                    <Box key={idx} sx={{ py: 2 }}>
                       <Typography><strong>{dayjs(v.date_of_visit).format('DD MMM YYYY, h:mm A')}</strong></Typography>
                       <Typography variant="body2" sx={{ color: 'primary.main' }}>{v.treatment}</Typography>
                       {v.doctor_notes && <Typography variant="body2"><strong>Notes:</strong> {v.doctor_notes}</Typography>}
@@ -293,11 +365,11 @@ export default function PatientDetail() {
                 <Typography variant="h6">Before / After Comparison</Typography>
                 <Typography variant="body2" sx={{ color: 'gray', mb: 1 }}>Select two visits to compare first photos</Typography>
                 <Box display="flex" gap={1} mb={2}>
-                  <TextField select label="Visit A" value={compare.a || ''} onChange={(e) => setCompare(c => ({ ...c, a: e.target.value }))} size="small" sx={{ flex: 1 }}>
+                  <TextField select label="Visit A" value={compare.a !== null ? compare.a : ''} onChange={(e) => setCompare(c => ({ ...c, a: e.target.value }))} size="small" sx={{ flex: 1 }}>
                     <MenuItem value="">Select</MenuItem>
                     {visits.map((v, i) => (<MenuItem key={i} value={i}>{dayjs(v.date_of_visit).format('DD MMM')} - {v.treatment}</MenuItem>))}
                   </TextField>
-                  <TextField select label="Visit B" value={compare.b || ''} onChange={(e) => setCompare(c => ({ ...c, b: e.target.value }))} size="small" sx={{ flex: 1 }}>
+                  <TextField select label="Visit B" value={compare.b !== null ? compare.b : ''} onChange={(e) => setCompare(c => ({ ...c, b: e.target.value }))} size="small" sx={{ flex: 1 }}>
                     <MenuItem value="">Select</MenuItem>
                     {visits.map((v, i) => (<MenuItem key={i} value={i}>{dayjs(v.date_of_visit).format('DD MMM')} - {v.treatment}</MenuItem>))}
                   </TextField>
@@ -313,11 +385,22 @@ export default function PatientDetail() {
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Add New Consultation for {patient?.full_name}</Typography>
             <Box display="flex" flexDirection="column" gap={2}>
-              <TextField label="Date of Visit" type="datetime-local" value={newVisit.date_of_visit} onChange={(e) => setNewVisit({ ...newVisit, date_of_visit: e.target.value })} InputLabelProps={{ shrink: true }} fullWidth sx={{ mb: 2 }} />
-              <TextField select label="Treatment Type" value={newVisit.treatment} onChange={(e) => setNewVisit({ ...newVisit, treatment: e.target.value })} fullWidth sx={{ mb: 2 }}>
-                <MenuItem value="">Select Treatment</MenuItem>
-                {TREATMENTS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </TextField>
+              <TextField label="Date of Visit" type="datetime-local" value={newVisit.date_of_visit} onChange={(e) => setNewVisit({ ...newVisit, date_of_visit: handleDateChange(e.target.value) })} InputLabelProps={{ shrink: true }} inputProps={{ step: 1800 }} fullWidth sx={{ mb: 2 }} />
+              <Box mb={2}>
+                <TextField select label="Treatment Type" value={TREATMENTS.includes(newVisit.treatment) ? newVisit.treatment : (newVisit.treatment ? 'Other' : '')} onChange={(e) => {
+                  if (e.target.value === 'Other') {
+                    setOtherTreatmentDialogOpen(true)
+                  } else {
+                    setNewVisit({ ...newVisit, treatment: e.target.value })
+                  }
+                }} fullWidth>
+                  <MenuItem value="">Select Treatment</MenuItem>
+                  {TREATMENTS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                </TextField>
+                {newVisit.treatment && !TREATMENTS.includes(newVisit.treatment) && (
+                  <Typography variant="caption" color="primary">Custom: {newVisit.treatment}</Typography>
+                )}
+              </Box>
               <TextField label="Doctor Notes" value={newVisit.doctor_notes} onChange={(e) => setNewVisit({ ...newVisit, doctor_notes: e.target.value })} multiline rows={2} fullWidth sx={{ mb: 2 }} />
               
               <Box>
@@ -388,6 +471,20 @@ export default function PatientDetail() {
       </Dialog>
 
       <MedicinesPanel open={medicinesPanelOpen} onClose={() => setMedicinesPanelOpen(false)} />
+
+      <Dialog open={otherTreatmentDialogOpen} onClose={() => setOtherTreatmentDialogOpen(false)}>
+        <DialogTitle>Specify Custom Treatment</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus margin="dense" label="Treatment Name" fullWidth value={otherTreatment} onChange={(e) => setOtherTreatment(e.target.value)} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOtherTreatmentDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => {
+            setNewVisit({ ...newVisit, treatment: otherTreatment })
+            setOtherTreatmentDialogOpen(false)
+          }} variant="contained">OK</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }

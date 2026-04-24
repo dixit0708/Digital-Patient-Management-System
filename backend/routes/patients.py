@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required
 from utils_sms import send_sms
 from utils_email import send_email
 import datetime
+import threading
 
 patients_bp = Blueprint("patients", __name__)
 
@@ -97,6 +98,77 @@ Medical Team"""
             traceback.print_exc()
 
 
+def _send_visit_notification(patient_id, visit, next_visit_iso):
+    try:
+        from db import db
+        from utils_sms import send_sms
+        from utils_email import send_email
+        import datetime
+        p = db.patients.find_one({"patient_id": patient_id})
+        if p and visit:
+            name = p.get("full_name")
+            phone = p.get("whatsapp")
+            email = p.get("email")
+            treatment = visit.get("treatment_type") or visit.get("treatment", "")
+            
+            if next_visit_iso:
+                ndt = datetime.datetime.fromisoformat(next_visit_iso)
+                date_str = ndt.strftime("%d %b %Y, %I:%M %p")
+            else:
+                date_str = "TBD"
+            
+            sms_message = f"🌟 Hello {name}!\n\n✅ Thank you for visiting our clinic today!\n\n📌 Treatment: {treatment}\n📅 Your Next Appointment: {date_str}\n\n⏰ Please arrive 5 minutes early\n📄 Bring any relevant medical documents\n\nFor any queries, contact us!\n\nBest Regards,\nOur Medical Team"
+            
+            email_subject = "Appointment Confirmation"
+            email_body = f"Dear {name},\n\nThank you for visiting us today for {treatment}.\n\nYour next appointment is scheduled on {date_str}.\n\nPlease arrive 5 minutes early. If you need to reschedule, kindly inform us in advance.\n\nRegards,\nMedical Team"
+
+            if phone:
+                try:
+                    ok, resp = send_sms(phone, sms_message)
+                    db.sms_logs.insert_one({
+                        "patient_id": patient_id,
+                        "type": "visit_confirmation",
+                        "phone": phone,
+                        "message": sms_message,
+                        "sent_at": datetime.datetime.utcnow(),
+                        "ok": bool(ok),
+                        "response": resp,
+                    })
+                except Exception as e:
+                    db.sms_logs.insert_one({
+                        "patient_id": patient_id,
+                        "type": "visit_confirmation",
+                        "phone": phone,
+                        "sent_at": datetime.datetime.utcnow(),
+                        "ok": False,
+                        "error": str(e),
+                    })
+            
+            if email:
+                try:
+                    send_email(email, email_subject, email_body)
+                    db.sms_logs.insert_one({
+                        "patient_id": patient_id,
+                        "type": "visit_confirmation_email",
+                        "email": email,
+                        "subject": email_subject,
+                        "sent_at": datetime.datetime.utcnow(),
+                        "ok": True,
+                    })
+                except Exception as e:
+                    db.sms_logs.insert_one({
+                        "patient_id": patient_id,
+                        "type": "visit_confirmation_email",
+                        "email": email,
+                        "sent_at": datetime.datetime.utcnow(),
+                        "ok": False,
+                        "error": str(e),
+                    })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
+
 @patients_bp.route("/", methods=["POST"], strict_slashes=False)
 @jwt_required()
 def create_patient():
@@ -161,7 +233,7 @@ def create_patient():
         db.patients.insert_one(patient)
         
         # Send immediate booking confirmation
-        send_booking_confirmation(patient)
+        threading.Thread(target=send_booking_confirmation, args=(patient,)).start()
         
         return jsonify({"msg": "patient created", "patient_id": patient_id}), 201
         
@@ -256,88 +328,9 @@ def update_patient(patient_id):
 
     # Send booking confirmation for new visit
     notification_sent = False
-    try:
-        p = db.patients.find_one({"patient_id": patient_id})
-        if p and visit:
-            name = p.get("full_name")
-            phone = p.get("whatsapp")
-            email = p.get("email")
-            treatment = visit.get("treatment_type") or visit.get("treatment", "")
-            
-            # Format next visit date
-            if next_visit_iso:
-                ndt = datetime.datetime.fromisoformat(next_visit_iso)
-                date_str = ndt.strftime("%d %b %Y, %I:%M %p")
-            else:
-                date_str = "TBD"
-            
-            # SMS/WhatsApp message (Professional format)
-            sms_message = f"🌟 Hello {name}!\n\n✅ Thank you for visiting our clinic today!\n\n📌 Treatment: {treatment}\n📅 Your Next Appointment: {date_str}\n\n⏰ Please arrive 5 minutes early\n📄 Bring any relevant medical documents\n\nFor any queries, contact us!\n\nBest Regards,\nOur Medical Team"
-            
-            # Email message - Plain text format
-            email_subject = "Appointment Confirmation"
-            email_body = f"""Dear {name},
-
-Thank you for visiting us today for {treatment}.
-
-Your next appointment is scheduled on {date_str}.
-
-Please arrive 5 minutes early. If you need to reschedule, kindly inform us in advance.
-
-Regards,
-Medical Team"""
-
-            # Send SMS
-            if phone:
-                try:
-                    ok, resp = send_sms(phone, sms_message)
-                    db.sms_logs.insert_one({
-                        "patient_id": patient_id,
-                        "type": "visit_confirmation",
-                        "phone": phone,
-                        "message": sms_message,
-                        "sent_at": datetime.datetime.utcnow(),
-                        "ok": bool(ok),
-                        "response": resp,
-                    })
-                    if ok:
-                        notification_sent = True
-                    print(f"✅ SMS sent to {phone}: {ok}")
-                except Exception as e:
-                    print(f"❌ SMS failed for {phone}: {str(e)}")
-                    db.sms_logs.insert_one({
-                        "patient_id": patient_id,
-                        "type": "visit_confirmation",
-                        "phone": phone,
-                        "sent_at": datetime.datetime.utcnow(),
-                        "ok": False,
-                        "error": str(e),
-                    })
-            
-            # Send Email
-            if email:
-                try:
-                    send_email(email, email_subject, email_body)
-                    db.sms_logs.insert_one({
-                        "patient_id": patient_id,
-                        "type": "visit_confirmation_email",
-                        "email": email,
-                        "subject": email_subject,
-                        "sent_at": datetime.datetime.utcnow(),
-                        "ok": True,
-                    })
-                except Exception as e:
-                    db.sms_logs.insert_one({
-                        "patient_id": patient_id,
-                        "type": "visit_confirmation_email",
-                        "email": email,
-                        "sent_at": datetime.datetime.utcnow(),
-                        "ok": False,
-                        "error": str(e),
-                    })
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
+    if visit:
+        threading.Thread(target=_send_visit_notification, args=(patient_id, visit, next_visit_iso)).start()
+        notification_sent = True
 
     return jsonify({"msg": "updated", "notification_sent": notification_sent})
 
