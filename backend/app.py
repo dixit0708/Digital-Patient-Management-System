@@ -10,8 +10,9 @@ load_dotenv()
 def create_app():
     app = Flask(__name__, static_folder=None)
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "change-this-secret")
-    # Configure CORS to allow preflight requests
-    CORS(app, resources={r"/api/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
+    # Configure CORS to allow preflight requests from any origin (e.g., Vercel frontend)
+    frontend_url = os.getenv("FRONTEND_URL", "*")
+    CORS(app, resources={r"/*": {"origins": frontend_url, "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
     jwt = JWTManager(app)
 
     # Allow OPTIONS requests to bypass JWT checking
