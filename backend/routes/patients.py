@@ -215,6 +215,7 @@ def create_patient():
             "doctor_advice": data.get("doctor_advice", ""),
             "treatment": data.get("treatment", ""),
             "photos": data.get("photos", []),
+            "videos": data.get("videos", []),
             "medicines": data.get("medicines", []),
             "blood_tests": data.get("blood_tests", []),
             "next_visit": next_visit_iso,
@@ -337,6 +338,8 @@ def update_patient(patient_id):
         visit.setdefault("amount_paid", "")
         visit.setdefault("dispatch_date", "")
         visit.setdefault("tracking_id", "")
+        visit.setdefault("photos", [])
+        visit.setdefault("videos", [])
         update["$push"]["visits"] = visit
     # update top-level fields
     for k in ["full_name", "age", "gender", "whatsapp", "email", "address", "medical_history", "current_issues"]:
