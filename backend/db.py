@@ -15,6 +15,8 @@ DB_NAME = os.getenv("MONGO_DB_NAME", "dpms")
 # run locally while we troubleshoot Atlas TLS issues.
 def _make_client(opts=None):
 	opts = opts or {}
+	if "localhost" in MONGO_URI or "127.0.0.1" in MONGO_URI:
+		return MongoClient(MONGO_URI, serverSelectionTimeoutMS=10000, **opts)
 	return MongoClient(
 		MONGO_URI,
 		tlsCAFile=certifi.where(),
