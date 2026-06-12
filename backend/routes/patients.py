@@ -264,7 +264,7 @@ def list_patients():
     per_page = int(request.args.get("per_page", 20))
     skip = (page - 1) * per_page
 
-    cursor = db.patients.find(q).skip(skip).limit(per_page)
+    cursor = db.patients.find(q).sort("created_at", -1).skip(skip).limit(per_page)
     results = []
     for p in cursor:
         p["_id"] = str(p.get("_id"))

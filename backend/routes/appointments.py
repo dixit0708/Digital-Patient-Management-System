@@ -53,6 +53,9 @@ def list_appointments():
     date_to = request.args.get("date_to")
     if patient_id:
         q["patient_id"] = patient_id
+    source = request.args.get("source")
+    if source:
+        q["source"] = source
     # TODO: filter by date range when date format known
 
     # FIX 6: Paginate to avoid loading all appointments into memory
